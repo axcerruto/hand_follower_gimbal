@@ -19,8 +19,17 @@ Orange | Tx (Transmit) | 0
 Yellow | Rx (Receive) | 1
 Green | RTS (Request to send) | 8
 
+## Install requirements:
+```
+python3 -m pip install numpy
+python3 -m pip install opencv-python
+python3 -m pip install mediapipe
+```
+
 ## Motor Connections
 Each servo motor has three wires: Power, GND, Signal.
 First servo controls pitch angle (pin 2).
 Second servo controls yaw angle (pin 13).
 
+## Triangulation
+For the math behind triangulation used in this code see: https://medium.com/@acerruto/simple-depth-sensing-with-a-dyi-stereo-camera-d4f42627f7e7
