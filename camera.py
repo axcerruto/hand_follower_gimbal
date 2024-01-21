@@ -1,129 +1,130 @@
 #!/usr/bin/env python3
-# Created by Antonio X Cerruto 24 Feb 2022
+# Original Author: Antonio X Cerruto, 10-Aug-2022
 import cv2
-import mediapipe as mp
-import numpy as np
-import sys
-import time
+import platform
+
+if(platform.system().lower() == 'linux'):
+	try:
+		import jetson_utils
+	except ImportError:
+		print("IMPORT ERROR: jetson_utils not imported.")
+
 
 class Camera:
-	"Camera class detects and tracks hand landmarks"
-	mp_drawing = mp.solutions.drawing_utils
-	mp_hands = mp.solutions.hands
-
-	def __init__(self, index=0):
+	"""
+	Camera class opens a camera on MacOS, Windows, or Linux.
+	Optionally uses jeton_utils on NVIDIA Jetson.
+	"""
+	def __init__(self,
+				index=0,
+				jetson=False,
+	 			selfie=False,
+	 			fps=None,
+				W=None,
+				H=None,
+	 			MJPG=True):
+		"""
+		Arguments:
+		index -- integer index for camera input
+		jetson -- Boolean to use jetson_utils. Default False.
+		selfie -- Boolean to mirror camera capture. Default False.
+		fps -- integer to optionally set frames per second.
+		W -- integer to optionally set frame width.
+		H -- integer to optionally set frame height.
+		MJPG -- Boolean to configure camera capture to MJPG. Default True.
+		"""
 		self.index = index
-		self.cap = cv2.VideoCapture(self.index)
-		self.hands = Camera.mp_hands.Hands(
-							model_complexity=0,
-							min_detection_confidence=0.5, 
-							min_tracking_confidence=0.5, 
-							max_num_hands=1)
-		self.success, self.image = self.cap.read()
-		self.results = self.hands.process(self.image)
-		self.x_in4 = 0
-		self.y_in4 = 0
-		self.x_th4 = 0
-		self.y_th4 = 0
-		self.grip = 0
-		self.tstart = int(time.time()*1000)
+		self.jetson = False
+		self.selfie = selfie
 
-		# configure camera capture to MJPG for faster read() operation
-		W, H = 1920, 1080
-		self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, W)
-		self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, H)
-		self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
-		self.cap.set(cv2.CAP_PROP_FPS, 30)
-
-
-	def process_cam_image(self, selfie=False):
-		# self.tstart = int(time.time()*1000)
-		self.success, self.image = self.cap.read()
-		# print(f'cap.read(): {int(time.time()*1000)-self.tstart}')
-
-		# self.tstart = int(time.time()*1000)
-		if not self.success:
-			print("Ignoring empty frame.")
-			return
-		if(selfie):
-			self.image = cv2.cvtColor(cv2.flip(self.image,1), cv2.COLOR_BGR2RGB) #selfie
+		if(platform.system().lower() == 'linux'
+		and jetson == True):
+			self.cap = jetson_utils.videoSource(f'/dev/video{index}')
+			self.jetson = jetson
 		else:
-			self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
-		# print(f'selfie_check: {int(time.time()*1000)-self.tstart}')
+			self.cap = cv2.VideoCapture(index)
 
-		# self.tstart = int(time.time()*1000)
-		self.image.flags.writeable = False
-		# print(f'image.flags.writeable : {int(time.time()*1000)-self.tstart}')
+			if(W is not None and H is not None):
+				self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, W)
+				self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, H)
 
-		# self.tstart = int(time.time()*1000)
-		self.results = self.hands.process(self.image)
-		# print(f'hands.process(self.image): {int(time.time()*1000)-self.tstart}')
+			if(fps is not None):
+				self.cap.set(cv2.CAP_PROP_FPS, fps)
 
-		# self.tstart = int(time.time()*1000)
-		self.image.flags.writeable = True
-		# print(f'image.flags.writeable: {int(time.time()*1000)-self.tstart}')
-
-		# self.tstart = int(time.time()*1000)
-		self.image = cv2.cvtColor(self.image, cv2.COLOR_RGB2BGR)
-		# print(f'cv2.cvtColor: {int(time.time()*1000)-self.tstart}')
+			# configure camera capture to MJPG for faster read
+			if(MJPG):
+				self.cap.set(cv2.CAP_PROP_FOURCC,
+							cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
 
 
-	def __process_landmarks__(self, hand_landmarks):
-		self.x_in4 = hand_landmarks.landmark[Camera.mp_hands.HandLandmark.INDEX_FINGER_TIP].x
-		self.y_in4 = hand_landmarks.landmark[Camera.mp_hands.HandLandmark.INDEX_FINGER_TIP].y
-		self.x_th4 = hand_landmarks.landmark[Camera.mp_hands.HandLandmark.THUMB_TIP].x
-		self.y_th4 = hand_landmarks.landmark[Camera.mp_hands.HandLandmark.THUMB_TIP].y
-		self.grip = int(10+63*(1-np.sqrt((self.x_th4-self.x_in4)**2+(self.y_th4-self.y_in4)**2)))
-		if (self.grip > 65):
-			self.grip = 90
+	def get_frame(self):
+		"""
+		Function that updates camera frame and returns bgr image.
 
+		Arguments:
+		None
 
-	def extract_cam_data(self):
-		if self.results.multi_hand_landmarks:
-			for hand_landmarks in self.results.multi_hand_landmarks:
-				Camera.mp_drawing.draw_landmarks(
-									self.image, 
-									hand_landmarks, 
-									Camera.mp_hands.HAND_CONNECTIONS)
-				self.__process_landmarks__(hand_landmarks)
+		Returns:
+		img -- image in BGR format
+		"""
+		img = None
+		if(self.jetson):
+			try:
+				# format options: 'rgb8', 'rgba8', 'rgb32f', 'rgba32f'
+				img_cuda = self.cap.Capture(format='rgb8')
+				bgr_img = jetson_utils.cudaAllocMapped(
+										width=img_cuda.width,
+										height=img_cuda.height,
+										format='bgr8')
+				jetson_utils.cudaConvertColor(img_cuda, bgr_img)
+				jetson_utils.cudaDeviceSynchronize()
+				img = jetson_utils.cudaToNumpy(bgr_img)
+			except:
+				print("WARNING: Ignoring empty frame.")
+				return img
 		else:
-			self.x_in4 = ''
-			self.y_in4 = ''
-			self.x_th4 = ''
-			self.y_th4 = ''
-			self.grip = ''
+			success, img = self.cap.read()
+			if(not success):
+				print("WARNING: Ignoring empty frame.")
+				return img
+		if(self.selfie):
+			img = cv2.flip(img,1)
+		return img
 
 
-	def run(self, selfie):
-		self.process_cam_image(selfie)
-		self.extract_cam_data()
-		self.show()
+	def show(self, img):
+		"""
+		Function that displays input image.
+
+		Arguments:
+		img -- image in BGR format
+
+		Returns:
+		None
+		"""
+		cv2.imshow(f"Cam {self.index}", img)
 
 
-	def show(self):
-		cv2.imshow(f'Camera {self.index}', self.image)
+	def run(self):
+		"""
+		Function that updates camera frame and displays it.
+		"""
+		img = self.get_frame()
+		if(img is not None):
+			self.show(img)
 
 
 	def close(self):
-		self.hands.close()
+		"""
+		Function that releases camera capture.
+		"""
 		self.cap.release()
 
-
-	if __name__ == "__main__":
-		# execute only if run as a script
-		i = int(sys.argv[1])
-		print(f'Testing camera module {i}')
-		cam = cv2.VideoCapture(i)
-		while(True):
-			s, image = cam.read()
-			cv2.imshow(f'Camera {i}', image)
-			if cv2.waitKey(5) & 0xFF == 27: # Esc key to exit
-				break
-
-
-
-		
-		
-
-	
-
+# For testing module.
+# Executes only if run as a script.
+if __name__ == "__main__":
+	cam = Camera(0, selfie=False)
+	while(True):
+		cam.run()
+		if(cv2.waitKey(5) == ord('q')):
+			break
