@@ -3,8 +3,8 @@ https://github.com/axcerruto/hand_follower_gimbal/assets/91328615/c5599338-75d4-
 
 ## Hardware 
 1. HiTec HS311 servo motors (2x)
-2. Logitech C615 webcam (2x)
-3. 3D printed gimbal parts
+2. Logitech C615 webcams (2x)
+3. 3D printed gimbal parts (.step files included here)
 4. Arduino board (DUE board used for testing)
 5. USB to TTL FTDI cable TTL-232RG-VSW5V-WE
 https://ftdichip.com/product-category/products/cables/usb-ttl-serial-cable-series/
