@@ -1,4 +1,4 @@
-https://github.com/axcerruto/hand_follower_gimbal/assets/91328615/9e2c07b0-9bde-47e3-a85a-96ad02157b8e
+[Title]https://github.com/axcerruto/hand_follower_gimbal/assets/91328615/9e2c07b0-9bde-47e3-a85a-96ad02157b8e
 
 # hand_follower_gimbal
 ## Hardware 
