@@ -88,7 +88,7 @@ class Gimbal:
 
 # execute only if run as a script
 if __name__ == "__main__":
-	# for use with Arduino code 'cam_gimbal_serial.ino'
+	# for use with Arduino code 'serial_read.ino'
 	import serialport
 	ser = serialport.port_setup()
 	gimbal = Gimbal()

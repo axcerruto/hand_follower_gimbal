@@ -111,7 +111,7 @@ def main():
 
     # read gimbal position
     if(gimbal._timestamp_()-t_read > 2):
-      gimbal.read_gimbal(ser)
+      # gimbal.read_gimbal(ser)
       # print(f'time: {gimbal._timestamp_()-t_start}, target: {target_y}, wrote: {write_y}, current: {gimbal.curr_yaw}, center: {center_theta}')
       t_read=gimbal._timestamp_()
 
