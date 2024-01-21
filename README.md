@@ -1,6 +1,6 @@
-https://github.com/axcerruto/hand_follower_gimbal/assets/91328615/9e2c07b0-9bde-47e3-a85a-96ad02157b8e
-
 # hand_follower_gimbal
+https://github.com/axcerruto/hand_follower_gimbal/assets/91328615/c5599338-75d4-47c9-b1ef-ecbfa419c9b0
+
 ## Hardware 
 1. HiTec HS311 servo motors (2x)
 2. Logitech C615 webcam (2x)
