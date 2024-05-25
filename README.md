@@ -24,6 +24,7 @@ Green | RTS (Request to send) | 8
 python3 -m pip install numpy
 python3 -m pip install opencv-python
 python3 -m pip install mediapipe
+python3 -m pip install pyserial
 ```
 
 ## Motor Connections
